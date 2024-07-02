@@ -1,17 +1,8 @@
 # telegram.py Interactive pwnagotchi plugin
 
 
-![Screenshot 2024-02-09 230346](https://github.com/gvieiraleao/telegram.py/assets/9049886/7733bb84-64b5-493e-b0ba-b8a386f2d348)
-
-![Screenshot 2024-02-12 215402](https://github.com/gvieiraleao/telegram.py/assets/9049886/8729120a-c973-4415-8194-06c84f138a57)
-
-
-
 A simple interactive telegram plugin for pwnagotchi the works in manual mode and AI mode, When internet is connected it takes a minute or 3 before you should get a menu
 pop up.
-
-https://github.com/gvieiraleao/tele.py (Here is a simple script to test if you have the correct Bot_id and Chat_id)
-
 
 
 ## Setup
