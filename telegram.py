@@ -56,6 +56,9 @@ main_menu = [
         InlineKeyboardButton("🗡️  Kill the daemon", callback_data="pwnkill"),
         InlineKeyboardButton("🔁 Restart Daemon", callback_data="soft_restart"),
     ],
+    [
+        InlineKeyboardButton("🗡️  QR Gen", callback_data="qr_files"),
+    ],
 ]
 
 stickers_exception = [
@@ -124,8 +127,8 @@ class Telegram(plugins.Plugin):
         self.updater = None
         self.start_menu_sent = False
         self.last_backup = ""
-        self.qrlist_path = "/root/.qrlist"
-        self.qrcode_dir = '/root/qrcodes/'
+        self.qrlist_path = "/home/pi/.qrlist"
+        self.qrcode_dir = '/home/pi/qrcodes/'
         self.locdata_path = '/home/pi/handshakes/'
         self.all_bssid = []
         self.all_ssid = []
