@@ -52,9 +52,6 @@ main_menu = [
         InlineKeyboardButton("💾 Create Backup", callback_data="create_backup"),
     ],
     [
-        InlineKeyboardButton("💾 Create Handshakes Zip", callback_data="create_pcap_backup"),
-    ],
-    [
         InlineKeyboardButton("🔄 Update bot", callback_data="bot_update"),
         InlineKeyboardButton("🗡️  Kill the daemon", callback_data="pwnkill"),
         InlineKeyboardButton("🔁 Restart Daemon", callback_data="soft_restart"),
@@ -127,8 +124,8 @@ class Telegram(plugins.Plugin):
         self.updater = None
         self.start_menu_sent = False
         self.last_backup = ""
-        self.qrlist_path = "/home/pi/.qrlist"
-        self.qrcode_dir = '/home/pi/qrcodes/'
+        self.qrlist_path = "/root/.qrlist"
+        self.qrcode_dir = '/root/qrcodes/'
         self.locdata_path = '/home/pi/handshakes/'
         self.all_bssid = []
         self.all_ssid = []
@@ -1517,6 +1514,85 @@ class Telegram(plugins.Plugin):
             reply = f"Memory Usage: {int(pwnagotchi.mem_usage() * 100)}%\n\nCPU Load: {int(pwnagotchi.cpu_load() * 100)}%\n\nCPU Temp: {pwnagotchi.temperature()}c"
             self.update_existing_message(update, context, reply)
             return
+
+    def create_backup(self, agent, update, context):
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            context.bot.send_chat_action(
+                chat_id=update.effective_chat.id, action="typing"
+            )
+            backup_files = [
+                "/root/brain.json",
+                "/root/.api-report.json",
+                "/home/pi/handshakes/",
+                "/root/peers/",
+                "/etc/pwnagotchi/",
+                "/var/log/pwnagotchi.log",
+            ]
+
+            # Get datetime
+
+            from datetime import datetime
+
+            current_time = datetime.now()
+            formatted_time = current_time.strftime("%Y-%m-%d-%H:%M:%S")
+
+            backup_file_name = f"pwnagotchi-backup-{formatted_time}.tar.gz"
+            backup_tar_path = f"/root/{backup_file_name}"
+
+            try:
+                # Create a tarball
+                subprocess.run(["sudo", "tar", "czf", backup_tar_path] + backup_files)
+
+                # Move the tarball to /home/pi/
+                subprocess.run(["sudo", "mv", backup_tar_path, "/home/pi/"])
+
+                self.generate_log("Backup created and moved successfully.", "DEBUG")
+
+            except Exception as e:
+                self.handle_exception(update, context, e)
+
+            # Obtain the file size
+
+            # Get the size on bytes
+            file_size = os.path.getsize(f"/home/pi/{backup_file_name}")
+            # Convert to mb
+            file_size /= 1024 * 1024
+            # Round to 2 decimal places
+            file_size = round(file_size, 2)
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        "📤 Send me the backup here", callback_data="send_backup"
+                    ),
+                ],
+            ]
+
+            response = f"✅ Backup created and moved successfully to <code>/home/pi</code>.\nFile size: <b>{file_size} MB</b>"
+            self.update_existing_message(update, context, response, keyboard)
+            self.completed_tasks += 1
+            if self.completed_tasks == self.num_tasks:
+                self.terminate_program()
+            self.last_backup = backup_file_name
+
+    def send_backup(self, agent, update, context):
+        if update.effective_chat.id == int(self.options.get("chat_id")):
+            chat_id = update.effective_user["id"]
+            context.bot.send_chat_action(chat_id, "upload_document")
+
+            try:
+                backup = self.last_backup
+                if backup:
+                    self.generate_log(f"Sending backup: {backup}", "DEBUG")
+                    backup_path = f"/home/pi/{backup}"
+                    with open(backup_path, "rb") as backup_file:
+                        update.effective_chat.send_document(document=backup_file)
+                    update.effective_message.reply_text("Backup sent successfully.")
+                else:
+                    self.generate_log("No backup file found.", "ERROR")
+                    update.effective_message.reply_text("No backup file found.")
+            except Exception as e:
+                self.handle_exception(update, context, e)
+
 
 if __name__ == "__main__":
     plugin = Telegram()
